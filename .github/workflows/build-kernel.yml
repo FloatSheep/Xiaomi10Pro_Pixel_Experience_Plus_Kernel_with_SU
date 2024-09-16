@@ -42,13 +42,14 @@ jobs:
         echo "NEED_DTBO=$(cat config.env | grep -w "NEED_DTBO" | head -n 1 | cut -d "=" -f 2)" >> $GITHUB_ENV
         echo "BUILD_BOOT_IMG=$(cat config.env | grep -w "BUILD_BOOT_IMG" | head -n 1 | cut -d "=" -f 2)" >> $GITHUB_ENV
         echo "SOURCE_BOOT_IMAGE=$(cat config.env | grep -w "SOURCE_BOOT_IMAGE" | head -n 1 | cut -d "=" -f 2)" >> $GITHUB_ENV
+        echo "SOURCE_BOOT_IMAGE_Z01=$(cat config.env | grep -w "SOURCE_BOOT_IMAGE_Z01" | head -n 1 | cut -d "=" -f 2)" >> $GITHUB_ENV
 
     - name: Setup build kernel environment
       run: |
         echo "BUILD_TIME=$(TZ=Asia/Shanghai date "+%Y%m%d%H%M")" >> $GITHUB_ENV
         echo "DEVICE=$(echo ${{ env.KERNEL_CONFIG }} | sed 's!vendor/!!;s/_defconfig//;s/_user//;s/-perf//')" >> $GITHUB_ENV
         sudo apt-get update
-        sudo apt-get install jq git ccache automake flex lzop bison gperf build-essential zip curl zlib1g-dev g++-multilib libxml2-utils bzip2 libbz2-dev libbz2-1.0 libghc-bzlib-dev squashfs-tools pngcrush schedtool dpkg-dev liblz4-tool make optipng maven libssl-dev pwgen libswitch-perl policycoreutils minicom libxml-sax-base-perl libxml-simple-perl bc libc6-dev-i386 lib32ncurses5-dev libx11-dev lib32z-dev libgl1-mesa-dev xsltproc unzip device-tree-compiler python2 python3
+        sudo apt-get install git ccache automake flex lzop bison gperf build-essential zip curl zlib1g-dev g++-multilib libxml2-utils bzip2 libbz2-dev libbz2-1.0 libghc-bzlib-dev squashfs-tools pngcrush schedtool dpkg-dev liblz4-tool make optipng maven libssl-dev pwgen libswitch-perl policycoreutils minicom libxml-sax-base-perl libxml-simple-perl bc libc6-dev-i386 lib32ncurses5-dev libx11-dev lib32z-dev libgl1-mesa-dev xsltproc unzip device-tree-compiler python2 python3
         mkdir -p $GITHUB_WORKSPACE/kernel_workspace
 
     - name: Download Clang-aosp
@@ -109,20 +110,11 @@ jobs:
       if: env.BUILD_BOOT_IMG == 'true'
       run: |
         cd $GITHUB_WORKSPACE/kernel_workspace
-    
-        # 下载 main boot image
-        main_url=$(echo '${{ env.SOURCE_BOOT_IMAGE }}' | jq -r '.main')
-        wget -O boot-source.img $main_url
-    
-        # 下载并处理分卷
-        z_urls=$(echo '${{ env.SOURCE_BOOT_IMAGE }}' | jq -r '.z[]')
-        for url in $z_urls; do
-          part_number=$(echo $url | awk -F'.' '{print $NF}')
-          wget -O boot.z${part_number}.zip $url
-          mv boot.z${part_number}.zip boot.z${part_number}
-        done
-    
-        # 解压分卷
+
+        wget ${{ env.SOURCE_BOOT_IMAGE }} -o boot.zip
+
+        wget ${{ env.SOURCE_BOOT_IMAGE_Z01 }} -o boot.z01
+
         zip -FF boot.z01 --out boot-combined.zip
         unzip boot-combined.zip
     
