@@ -110,11 +110,7 @@ jobs:
       if: env.BUILD_BOOT_IMG == 'true'
       run: |
         cd $GITHUB_WORKSPACE/kernel_workspace
-        wget ${{ env.SOURCE_BOOT_IMAGE }} -o boot.zip
-        wget ${{ env.SOURCE_BOOT_IMAGE_Z01 }} -o boot.z01
-        7z x boot.zip
-        mv boot.img boot-source.img
-    
+        wget -O boot-source.img ${{ env.SOURCE_BOOT_IMAGE }}
         if [ -f boot-source.img ]; then
             echo "FORMAT_MKBOOTING=$(echo `tools/unpack_bootimg.py --boot_img=boot-source.img --format mkbootimg`)" >> $GITHUB_ENV
             echo "HAVE_SOURCE_BOOT_IMAGE=true" >> $GITHUB_ENV
